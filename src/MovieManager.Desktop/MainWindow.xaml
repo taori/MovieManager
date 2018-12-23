@@ -1,0 +1,137 @@
+﻿<Window x:Class="MovieManager.Desktop.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:Interactions="http://schemas.microsoft.com/xaml/behaviors"
+        xmlns:behaviours="clr-namespace:MovieManager.Desktop.Behaviours"
+        xmlns:viewModels="clr-namespace:MovieManager.Desktop.ViewModels"
+        xmlns:markupExtensions="clr-namespace:MovieManager.Desktop.MarkupExtensions"
+        xmlns:properties="clr-namespace:MovieManager.Desktop.Properties"
+        mc:Ignorable="d"
+		x:Name="Self"
+        Title="MainWindow" 
+        Left="{Binding Source={x:Static properties:Settings.Default}, Path=WindowX, Mode=TwoWay}" 
+        Top="{Binding Source={x:Static properties:Settings.Default}, Path=WindowY, Mode=TwoWay}" 
+        Height="{Binding Source={x:Static properties:Settings.Default}, Path=WindowHeight, Mode=TwoWay}" 
+        Width="{Binding Source={x:Static properties:Settings.Default}, Path=WindowWidth, Mode=TwoWay}">
+	<Interactions:Interaction.Behaviors>
+		<behaviours:PersistSettingsOnWindowChange/>
+	</Interactions:Interaction.Behaviors>
+	<Window.DataContext>
+		<viewModels:MainViewModel></viewModels:MainViewModel>
+	</Window.DataContext>
+	<Grid>
+		<Grid.RowDefinitions>
+			<RowDefinition Height="Auto"/>
+			<RowDefinition Height="*"/>
+		</Grid.RowDefinitions>
+
+		<DockPanel Grid.ColumnSpan="2">
+			<UniformGrid Rows="7" DockPanel.Dock="Left">
+				<Label VerticalAlignment="Center" Content="Reload view:"/>
+				<Label VerticalAlignment="Center" Content="Reload data:"/>
+				<Label VerticalAlignment="Center" Content="Movie filter:"/>
+				<Label VerticalAlignment="Center" Content="Display recent x days:"/>
+				<Label VerticalAlignment="Center" Content="Search:" />
+				<Label VerticalAlignment="Center" Content="Only favourites:" />
+				<Label VerticalAlignment="Center" Content="Wide Mode:" />
+			</UniformGrid>
+			<UniformGrid Rows="7" HorizontalAlignment="Stretch">
+				<Button Command="{Binding Path=ReloadViewCommand, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" Content="Reload View" Padding="5" IsEnabled="{Binding Path=ControlsEnabled.Value}" Margin="0,5,10,5"/>
+				<Button Command="{Binding Path=ReloadDataCommand, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" Content="Reload Data" Padding="5" IsEnabled="{Binding Path=ControlsEnabled.Value}" Margin="0,5,10,5"/>
+				<ComboBox ItemsSource="{Binding Source={markupExtensions:EnumSource {x:Type viewModels:DisplayTypeFilter}}}" IsSynchronizedWithCurrentItem="True" DisplayMemberPath="Description" SelectedValuePath="Value" SelectedValue="{Binding Path=DisplayFilter.Value}" Margin="0,5,10,5" Padding="5" IsEnabled="{Binding Path=ControlsEnabled.Value}"/>
+				<TextBox HorizontalAlignment="Left" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Text="{Binding Path=DisplayCount.Value, UpdateSourceTrigger=PropertyChanged}" Width="40" IsEnabled="{Binding Path=ControlsEnabled.Value}" Margin="0,5,10,5"/>
+				<TextBox VerticalContentAlignment="Center" Text="{Binding Path=CurrentSearch.Value, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding Path=ControlsEnabled.Value}" Margin="0,5,10,5"/>
+				<CheckBox VerticalAlignment="Center"
+				          IsChecked="{Binding Path=FavouritesOnly.Value, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding Path=ControlsEnabled.Value}" Margin="0,5,10,5">
+					<CheckBox.LayoutTransform>
+						<ScaleTransform ScaleX="1.5" ScaleY="1.5"/>
+					</CheckBox.LayoutTransform>
+				</CheckBox>
+				<CheckBox VerticalAlignment="Center"
+				          IsChecked="{Binding Path=WideMode.Value, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding Path=ControlsEnabled.Value}" Margin="0,5,10,5">
+					<CheckBox.LayoutTransform>
+						<ScaleTransform ScaleX="1.5" ScaleY="1.5"/>
+					</CheckBox.LayoutTransform>
+				</CheckBox>
+			</UniformGrid>
+		</DockPanel>
+		<ListView Grid.Row="1" ItemsSource="{Binding Path=Items}" BorderThickness="0">
+			<ListView.ItemContainerStyle>
+				<Style TargetType="{x:Type ListViewItem}">
+					<Setter Property="HorizontalContentAlignment" Value="Stretch"></Setter>
+				</Style>
+			</ListView.ItemContainerStyle>
+			<ListView.ItemTemplate>
+				<DataTemplate DataType="{x:Type viewModels:LinkGroupViewModel}">
+					<Grid>
+						<Grid.RowDefinitions>
+							<RowDefinition Height="Auto"/>
+							<RowDefinition Height="*"/>
+						</Grid.RowDefinitions>
+						<Grid.ColumnDefinitions>
+							<ColumnDefinition Width="105"/>
+							<ColumnDefinition Width="*"/>
+						</Grid.ColumnDefinitions>
+						<Image Source="{Binding Path=Thumbnail}" VerticalAlignment="Top" Stretch="Uniform" Grid.Column="0" Grid.Row="0" Grid.RowSpan="2" Visibility="{Binding ElementName=Self, Path=DataContext.WideMode.Value, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+						<StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="0">
+							<Polygon Margin="10,0,0,0" Cursor="Hand" Stroke="Black" StrokeThickness=".5" StrokeLineJoin="Round" Width="15" Height="15" Stretch="Fill" Points="10,2 12,7 17,7 13,10 16,15 9,12 4,15 6,10 1,7 7,7">
+								<Interactions:Interaction.Triggers>
+									<Interactions:EventTrigger EventName="MouseUp">
+										<Interactions:InvokeCommandAction Command="{Binding Path=ToggleFavouriteCommand}"/>
+									</Interactions:EventTrigger>
+								</Interactions:Interaction.Triggers>
+								<Polygon.Style>
+									<Style>
+										<Setter Property="Polygon.Fill" Value="DarkGray"/>
+										<Style.Triggers>
+											<DataTrigger Binding="{Binding Path=IsFavourite.Value}" Value="True">
+												<Setter Property="Polygon.Fill" Value="Yellow"/>
+											</DataTrigger>
+										</Style.Triggers>
+									</Style>
+								</Polygon.Style>
+							</Polygon>
+							<TextBlock Margin="10,0,0,0" Text="{Binding Path=Name}" FontSize="15" FontWeight="Bold"/>
+						</StackPanel>
+
+						<ItemsControl ItemsSource="{Binding Path=Items}" Margin="10,0,0,0" Grid.Column="1" Grid.Row="1">
+							<ItemsControl.ItemTemplate>
+								<DataTemplate DataType="{x:Type viewModels:LinkEntryViewModel}">
+									<Border Padding="5">
+										<Grid>
+											<Grid.ColumnDefinitions>
+												<ColumnDefinition Width="*"/>
+												<ColumnDefinition Width="10"/>
+												<ColumnDefinition Width="Auto"/>
+												<ColumnDefinition Width="10"/>
+												<ColumnDefinition Width="Auto"/>
+											</Grid.ColumnDefinitions>
+											<TextBlock Grid.Column="0" VerticalAlignment="Center">
+												<Hyperlink NavigateUri="{Binding Path=Link}">
+													<Interactions:Interaction.Behaviors>
+														<behaviours:HyperlinkOpenBehaviour ConfirmNavigation="True"/>
+													</Interactions:Interaction.Behaviors>
+													<Hyperlink.Inlines>
+														<Run Text="{Binding Path=Link}"/>
+													</Hyperlink.Inlines>
+												</Hyperlink>
+											</TextBlock>
+											<TextBlock Text="{Binding Path=PassedTimeString, StringFormat={} {0} days ago.}" Grid.Column="2" VerticalAlignment="Center"/>
+											<CheckBox IsChecked="{Binding Path=IsViewed.Value}" Grid.Column="4" VerticalAlignment="Center" VerticalContentAlignment="Center">
+												<CheckBox.LayoutTransform>
+													<ScaleTransform ScaleX="1.5" ScaleY="1.5"/>
+												</CheckBox.LayoutTransform>
+											</CheckBox>
+										</Grid>
+									</Border>
+								</DataTemplate>
+							</ItemsControl.ItemTemplate>
+						</ItemsControl>
+					</Grid>
+				</DataTemplate>
+			</ListView.ItemTemplate>
+		</ListView>
+	</Grid>
+</Window>
